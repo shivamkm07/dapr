@@ -160,18 +160,28 @@ func getGRPC(keys []string) (string, error) {
 	}
 	items := res.GetItems()
 	respInBytes, _ := json.Marshal(items)
+	fmt.Println("getGRPC returning items",string(respInBytes))
 	return string(respInBytes), nil
 }
 
 // getKeyValues is the handler for getting key-values from config store
 func getKeyValues(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	protocol := vars["protocol"]
 	var keys []string
 	err := json.NewDecoder(r.Body).Decode(&keys)
 	if err != nil {
 		sendResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	response, err := getHTTP(keys)
+	var response string
+	if protocol == "http"{
+		response, err = getHTTP(keys)
+	} else if protocol == "grpc"{
+		response, err = getGRPC(keys)
+	} else{
+		err = fmt.Errorf("Unknown protocol in Get call: %s",protocol)
+	}
 	if err != nil {
 		sendResponse(w, http.StatusInternalServerError, err.Error())
 		return
@@ -272,13 +282,22 @@ func subscribeHTTP(keys []string) (string, error) {
 
 // startSubscription is the handler for starting a subscription to config store
 func startSubscription(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	protocol := vars["protocol"]
 	var keys []string
 	err := json.NewDecoder(r.Body).Decode(&keys)
 	if err != nil {
 		sendResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	subscriptionID, err := subscribeHTTP(keys)
+	var subscriptionID string
+	if protocol == "http"{
+		subscriptionID, err = subscribeHTTP(keys)
+	} else if protocol == "grpc"{
+		subscriptionID, err = subscribeGRPC(keys)
+	} else{
+		err = fmt.Errorf("Unknown protocol in Subscribe call: %s",protocol)
+	}
 
 	if err != nil {
 		sendResponse(w, http.StatusInternalServerError, err.Error())
@@ -316,7 +335,16 @@ func unsubscribeGRPC(subscriptionID string) (string, error) {
 func stopSubscription(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	subscriptionID := vars["subscriptionID"]
-	response, err := unsubscribeHTTP(subscriptionID)
+	protocol := vars["protocol"]
+	var response string
+	var err error
+	if protocol == "http"{
+		response, err = unsubscribeHTTP(subscriptionID)
+	} else if protocol == "grpc"{
+		response, err = unsubscribeGRPC(subscriptionID)
+	} else{
+		err = fmt.Errorf("Unknown protocol in unsubscribe call: %s",protocol)
+	}
 	if err != nil {
 		sendResponse(w, http.StatusInternalServerError, err.Error())
 		return
@@ -411,9 +439,9 @@ func appRouter() *mux.Router {
 
 	router.HandleFunc("/", indexHandler).Methods("GET")
 	router.HandleFunc("/initialize-updater", initializeUpdater).Methods("POST")
-	router.HandleFunc("/get-key-values", getKeyValues).Methods("POST")
-	router.HandleFunc("/subscribe", startSubscription).Methods("POST")
-	router.HandleFunc("/unsubscribe/{subscriptionID}", stopSubscription).Methods("GET")
+	router.HandleFunc("/get-key-values/{protocol}", getKeyValues).Methods("POST")
+	router.HandleFunc("/subscribe/{protocol}", startSubscription).Methods("POST")
+	router.HandleFunc("/unsubscribe/{subscriptionID}/{protocol}", stopSubscription).Methods("GET")
 	router.HandleFunc("/configuration/{storeName}/{key}", configurationUpdateHandler).Methods("POST")
 	router.HandleFunc("/get-received-updates/{subscriptionID}", getReceivedUpdates).Methods("GET")
 	router.HandleFunc("/update-key-values", updateKeyValues).Methods("POST")

@@ -263,6 +263,7 @@ var apps []struct {
 
 var protocols []string = []string{
 	"http",
+	"grpc",
 }
 
 func TestConfiguration(t *testing.T) {
