@@ -160,7 +160,6 @@ func getGRPC(keys []string) (string, error) {
 	}
 	items := res.GetItems()
 	respInBytes, _ := json.Marshal(items)
-	fmt.Println("getGRPC returning items",string(respInBytes))
 	return string(respInBytes), nil
 }
 
@@ -175,12 +174,12 @@ func getKeyValues(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var response string
-	if protocol == "http"{
+	if protocol == "http" {
 		response, err = getHTTP(keys)
-	} else if protocol == "grpc"{
+	} else if protocol == "grpc" {
 		response, err = getGRPC(keys)
-	} else{
-		err = fmt.Errorf("Unknown protocol in Get call: %s",protocol)
+	} else {
+		err = fmt.Errorf("Unknown protocol in Get call: %s", protocol)
 	}
 	if err != nil {
 		sendResponse(w, http.StatusInternalServerError, err.Error())
@@ -216,13 +215,8 @@ func subscribeGRPC(keys []string) (string, error) {
 		return "", fmt.Errorf("error subscribe: %s", err)
 	}
 	subscriptionID := res.GetId()
-	items := res.GetItems()
-	if len(items) > 0 {
-		log.Printf("App received initial config: %v\n", items)
-		return subscriptionID, fmt.Errorf("error subscribe: initial config received: %v\n", items)
-	}
-	log.Printf("App subscribed to config changes with subscription id: %s\n", subscriptionID)
 	go subscribeHandlerGRPC(client)
+	log.Printf("App subscribed to config changes with subscription id: %s\n", subscriptionID)
 	return subscriptionID, nil
 }
 
@@ -291,12 +285,12 @@ func startSubscription(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var subscriptionID string
-	if protocol == "http"{
+	if protocol == "http" {
 		subscriptionID, err = subscribeHTTP(keys)
-	} else if protocol == "grpc"{
+	} else if protocol == "grpc" {
 		subscriptionID, err = subscribeGRPC(keys)
-	} else{
-		err = fmt.Errorf("Unknown protocol in Subscribe call: %s",protocol)
+	} else {
+		err = fmt.Errorf("Unknown protocol in Subscribe call: %s", protocol)
 	}
 
 	if err != nil {
@@ -338,12 +332,12 @@ func stopSubscription(w http.ResponseWriter, r *http.Request) {
 	protocol := vars["protocol"]
 	var response string
 	var err error
-	if protocol == "http"{
+	if protocol == "http" {
 		response, err = unsubscribeHTTP(subscriptionID)
-	} else if protocol == "grpc"{
+	} else if protocol == "grpc" {
 		response, err = unsubscribeGRPC(subscriptionID)
-	} else{
-		err = fmt.Errorf("Unknown protocol in unsubscribe call: %s",protocol)
+	} else {
+		err = fmt.Errorf("Unknown protocol in unsubscribe call: %s", protocol)
 	}
 	if err != nil {
 		sendResponse(w, http.StatusInternalServerError, err.Error())
