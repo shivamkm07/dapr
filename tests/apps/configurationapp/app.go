@@ -574,13 +574,22 @@ func initializeUpdater(w http.ResponseWriter, r *http.Request) {
 
 // updateKeyValues is the handler for updating key values in the config store
 func updateKeyValues(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	operation := vars["operation"]
 	items := make(map[string]*Item, 10)
 	err := json.NewDecoder(r.Body).Decode(&items)
 	if err != nil {
 		sendResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	err = updater.Update(items)
+	switch operation {
+	case "add":
+		err = updater.AddKey(items)
+	case "update":
+		err = updater.UpdateKey(items)
+	default:
+		err = fmt.Errorf("unknown operation: %s", operation)
+	}
 	if err != nil {
 		sendResponse(w, http.StatusBadRequest, err.Error())
 		return
@@ -602,7 +611,7 @@ func appRouter() *mux.Router {
 	router.HandleFunc("/unsubscribe/{subscriptionID}/{protocol}/{configStore}", stopSubscription).Methods("GET")
 	router.HandleFunc("/configuration/{storeName}/{key}", configurationUpdateHandler).Methods("POST")
 	router.HandleFunc("/get-received-updates/{subscriptionID}", getReceivedUpdates).Methods("GET")
-	router.HandleFunc("/update-key-values", updateKeyValues).Methods("POST")
+	router.HandleFunc("/update-key-values/{operation}", updateKeyValues).Methods("POST")
 
 	router.Use(mux.CORSMethodMiddleware(router))
 	return router
