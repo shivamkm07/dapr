@@ -273,8 +273,17 @@ func (be *actorBackend) GetActivityWorkItem(ctx context.Context) (*backend.Activ
 }
 
 // GetOrchestrationRuntimeState implements backend.Backend
-func (*actorBackend) GetOrchestrationRuntimeState(context.Context, *backend.OrchestrationWorkItem) (*backend.OrchestrationRuntimeState, error) {
-	return nil, errors.New("not supported")
+func (be *actorBackend) GetOrchestrationRuntimeState(ctx context.Context, owi *backend.OrchestrationWorkItem) (*backend.OrchestrationRuntimeState, error) {
+	state, err := LoadWorkflowState(ctx, be.actors, string(owi.InstanceID), be.config)
+	if err != nil {
+		return nil, err
+	}
+	if state == nil {
+		// No such state exists in the state store
+		return nil, nil
+	}
+	runtimeState := backend.NewOrchestrationRuntimeState(owi.InstanceID, state.History)
+	return runtimeState, nil
 }
 
 // GetOrchestrationWorkItem implements backend.Backend
