@@ -170,7 +170,7 @@ jobs:
 
     - name: Build and push test apps
       run: |
-        make build-push-e2e-app-all
+        make build-push-e2e-app-workflowsapp
 
     - name: Setup Dapr
       run: |
@@ -212,7 +212,7 @@ jobs:
 
     - name: Run tests
       run: |
-        make test-e2e-all
+        DAPR_E2E_TEST=workflows make test-e2e-all
       env:
         DAPR_TEST_CONFIG_STORE: ${{ matrix.dapr-test-config-store }}
 
