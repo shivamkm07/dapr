@@ -57,7 +57,7 @@ func TestMain(m *testing.M) {
 				DaprMemoryRequest:   "100Mi",
 				AppMemoryLimit:      "200Mi",
 				AppMemoryRequest:    "100Mi",
-				AppPort:             -1,
+				AppPort:             4000,
 				DebugLoggingEnabled: true,
 			},
 		}
